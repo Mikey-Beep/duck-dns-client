@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>DuckDNS Client</title>
+        <meta charset="UTF-8"/>
+        <meta content="width=device-width, initial-scale=1"/>
+        <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    </head>
+    {% include 'header.html' %}
+    <body onload="populateConfig()">
+        <div class="content">
+            <div>
+                <form action="javascript:sendConfig()" autocomplete="off">
+                    <div>
+                        <label for="domain">Domain</label>
+                        <input type="text" id="domain" name="domain">
+                    </div>
+                    <div>
+                        <label for="token">Token</label>
+                        <input type="text" id="token" name="token">
+                    </div>
+                    <div>
+                        <input type="submit" value="Submit">
+                    </div>
+                </form>
+            </div>
+            <div>
+                <button onclick="updateDNS()" id="update">Update DNS</button>
+            </div>
+            <div>
+                <div id="output" name="output"></div>
+            </div>
+        </div>
+    </body>
+</html>
+
+<script>
+    async function populateConfig(){
+        fetch("/config")
+            .then(function(response) {
+                return response.json();
+            })
+            .then(function(jsonResponse) {
+                document.getElementById("domain").value = jsonResponse.domain;
+                document.getElementById("token").value = jsonResponse.token;
+            });
+    }
+
+    function sendConfig(){
+        var data = {};
+        data.domain = document.getElementById("domain").value;
+        data.token = document.getElementById("token").value;
+        fetch("/config", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(data)
+        })
+        .then(function(response) {
+            return response.json();
+        })
+        .then(function(jsonResponse) {
+            document.getElementById("output").innerHTML = jsonResponse.duck_dns_response;
+        });
+    }
+
+    function updateDNS(){
+        fetch("/update")
+        .then(function(response) {
+            return response.json();
+        })
+        .then(function(jsonResponse) {
+            document.getElementById("output").innerHTML = jsonResponse.duck_dns_response;
+        });
+    }
+</script>

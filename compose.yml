@@ -1,0 +1,28 @@
+services:
+  back:
+    image: ws11containerreg.azurecr.io/duck-dns-client-back
+    build:
+      context: ./duck-dns-client-back
+    networks:
+      - duck-dns-net
+    volumes:
+      - duck-dns-conf:/app/data
+    restart: always
+  front:
+    image: ws11containerreg.azurecr.io/duck-dns-client-front
+    depends_on:
+      - back
+    build: 
+      context: ./duck-dns-client-front
+    networks:
+      - duck-dns-net
+      - internal
+    restart: always
+
+volumes:
+  duck-dns-conf: {}
+
+networks:
+  duck-dns-net: {}
+  internal:
+    external: true
