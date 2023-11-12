@@ -1,9 +1,11 @@
+"""This module handles the background tasks to keep the DuckDNS record updated.
+"""
 import json
+from pathlib import Path
 import requests
 import yaml
-from apscheduler.schedulers.background import BackgroundScheduler
 from flask import Flask, request, Response
-from pathlib import Path
+from apscheduler.schedulers.background import BackgroundScheduler
 
 config_path = Path(__file__).parent / "data" / "conf.yml"
 
@@ -11,6 +13,8 @@ app = Flask(__name__)
 
 
 def send_req() -> str:
+    """Sends the update request to DuckDNS
+    """
     with config_path.open() as config_file:
         config_yaml = yaml.safe_load(config_file.read())
     response = requests.get(
@@ -21,6 +25,7 @@ def send_req() -> str:
             "ip": "",
             "verbose": "true",
         },
+        timeout=10
     )
     print(resp := str(response.content, encoding="utf-8"))
     return resp
@@ -28,21 +33,24 @@ def send_req() -> str:
 
 @app.route("/update", methods=["GET"])
 def update() -> Response:
+    """Endpoint to force update of the DuckDNS record.
+    """
     resp = {"duck_dns_response": send_req()}
     return Response(status=200, response=json.dumps(resp))
 
 
 @app.route("/config", methods=["GET", "POST"])
 def config() -> Response:
-    if request.method == "GET":
-        with config_path.open() as config_file:
-            config_yaml = yaml.safe_load(config_file.read())
-        return Response(status=200, response=json.dumps(config_yaml))
-    elif request.method == "POST":
+    """Endpoint to handle fetching and updating the DuckDNS config.
+    """
+    if request.method == "POST":
         with config_path.open("w") as config_file:
             config_file.write(yaml.safe_dump(request.json))
         resp = {"duck_dns_response": send_req()}
         return Response(status=200, response=json.dumps(resp))
+    with config_path.open() as config_file:
+        config_yaml = yaml.safe_load(config_file.read())
+    return Response(status=200, response=json.dumps(config_yaml))
 
 
 with app.app_context():
